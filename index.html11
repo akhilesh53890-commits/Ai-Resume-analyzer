@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAHISHMATI | Royal Resume AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Fauna+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --royal-gold: #ffd700;
+            --war-gold: #b8860b;
+            --blood-red: #2b0505;
+            --armor-dark: #0a0a0a;
+            --stone-grey: #1f1f1f;
+            --text-light: #f0e6d2;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            background-color: var(--armor-dark);
+            color: var(--text-light);
+            font-family: 'Fauna One', serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- BACKGROUND EMBERS CANVAS --- */
+        #canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3, .royal-text { 
+            font-family: 'Cinzel', serif; text-transform: uppercase; 
+            letter-spacing: 2px;
+        }
+
+        .gold-text {
+            background: linear-gradient(to bottom, #fff7cc 0%, #ffd700 50%, #b8860b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            filter: drop-shadow(0 2px 0px rgba(0,0,0,0.8));
+        }
+
+        /* --- LAYOUT --- */
+        .container { 
+            width: 100%; max-width: 1200px; padding: 40px 20px; 
+            flex: 1; display: flex; flex-direction: column; position: relative; z-index: 2;
+        }
+
+        header { 
+            text-align: center; margin-bottom: 60px; 
+            animation: slamDown 1s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        
+        header p { 
+            color: #886622; margin-top: 10px; letter-spacing: 6px; font-size: 0.9rem; font-weight: bold; 
+            border-top: 1px solid #886622; border-bottom: 1px solid #886622; display: inline-block; padding: 5px 20px;
+        }
+
+        /* --- SOUND TOGGLE --- */
+        .sound-toggle {
+            position: fixed; top: 20px; right: 20px; z-index: 1000;
+            background: rgba(0,0,0,0.8); border: 2px solid var(--royal-gold);
+            color: var(--royal-gold); padding: 10px; border-radius: 50%;
+            width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.3s; font-size: 1.5rem;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        .sound-toggle:hover { background: var(--royal-gold); color: #000; transform: scale(1.1); }
+
+        /* --- 1. UPLOAD ZONE --- */
+        .upload-wrapper { width: 100%; max-width: 700px; margin: 0 auto; perspective: 1000px; transition: 0.5s; }
+        
+        .drop-zone {
+            background: linear-gradient(145deg, #1a0505, #000);
+            border: 2px solid var(--war-gold);
+            border-radius: 4px;
+            height: 350px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.4s ease;
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 50px rgba(0,0,0,0.9);
+        }
+
+        .drop-zone::before, .drop-zone::after {
+            content: ''; position: absolute; width: 20px; height: 20px;
+            border: 2px solid var(--royal-gold); transition: 0.3s;
+        }
+        .drop-zone::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .drop-zone::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        .drop-zone:hover {
+            border-color: #ffed8a;
+            box-shadow: 0 0 60px rgba(255, 69, 0, 0.2);
+            transform: scale(1.02);
+        }
+
+        .icon-sword {
+            font-size: 4rem; margin-bottom: 20px; color: var(--war-gold);
+            transform: rotate(-45deg); transition: 0.5s;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        .drop-zone:hover .icon-sword { transform: rotate(0deg) scale(1.2); color: var(--royal-gold); }
+
+        .btn-analyze {
+            display: none; margin: 40px auto 0; padding: 20px 60px;
+            font-family: 'Cinzel', serif; font-weight: 900; font-size: 1.2rem;
+            background: linear-gradient(to bottom, #b8860b, #5e4404);
+            color: #fff; letter-spacing: 2px; text-transform: uppercase;
+            border: 2px solid #ffd700; border-radius: 2px; cursor: pointer; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+            transition: 0.3s; 
+            text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+        }
+        .btn-analyze:hover { 
+            background: linear-gradient(to bottom, #ffd700, #b8860b);
+            transform: translateY(-3px);
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.4); 
+        }
+
+        /* --- 2. UPLOAD MODAL --- */
+        #uploadModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 200;
+            justify-content: center; align-items: center; animation: fadeIn 0.5s;
+        }
+        .modal-content { width: 500px; text-align: center; position: relative; }
+        
+        .progress-container {
+            width: 100%; height: 10px; background: #330000; border: 1px solid var(--war-gold);
+            margin: 20px 0; position: relative; box-shadow: 0 0 20px rgba(255,0,0,0.2);
+        }
+        .progress-fill {
+            height: 100%; width: 0%; background: linear-gradient(90deg, #b8860b, #ffd700, #b8860b);
+            box-shadow: 0 0 20px #ffd700; transition: width 0.05s linear;
+        }
+
+        /* --- 3. REDIRECT SCREEN --- */
+        #redirectScreen {
+            display: none; width: 100%; height: 70vh; 
+            justify-content: center; align-items: center; flex-direction: column;
+            position: relative;
+        }
+
+        .sword-container {
+            position: relative; width: 100px; height: 200px;
+            animation: floatWeapon 3s infinite ease-in-out;
+        }
+
+        .sword-blade {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 10px; height: 150px; background: linear-gradient(90deg, #fff, #aaa);
+            bottom: 40px; border-radius: 50% 50% 0 0 / 10% 10% 0 0;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        .sword-guard {
+            position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
+            width: 50px; height: 10px; background: var(--royal-gold);
+            border-radius: 2px; box-shadow: 0 0 10px var(--royal-gold);
+        }
+        .sword-hilt {
+            position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+            width: 8px; height: 30px; background: #4a3c1b;
+        }
+        
+        .loading-text {
+            margin-top: 50px; font-size: 2rem; color: var(--royal-gold);
+            text-shadow: 0 0 20px #ff0000; letter-spacing: 5px;
+            animation: pulseText 1.5s infinite;
+        }
+
+        .fire-ring {
+            position: absolute; width: 200px; height: 200px; border-radius: 50%;
+            border: 2px solid transparent; border-top-color: #ff4500; border-bottom-color: #ffd700;
+            animation: spinFire 1s infinite linear; box-shadow: 0 0 40px rgba(255, 69, 0, 0.3);
+            z-index: -1; top: 0;
+        }
+
+        /* --- 4. CHECKLIST --- */
+        #processingScreen {
+            display: none; width: 100%; max-width: 1100px; margin: 0 auto;
+            grid-template-columns: 1fr 1fr; gap: 50px; animation: slideUp 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .skeleton-card {
+            background: #120505; border: 2px solid #5c4112;
+            height: 450px; position: relative; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+        .skeleton-shimmer {
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.05), transparent);
+            transform: skewX(-20deg); animation: shimmer 2s infinite;
+        }
+        
+        .checklist-container { display: flex; flex-direction: column; justify-content: center; }
+        .check-item {
+            display: flex; align-items: center; gap: 20px; margin-bottom: 30px;
+            font-size: 1.3rem; color: #886622; opacity: 0; transform: translateX(-50px);
+            transition: 0.5s; font-family: 'Cinzel', serif;
+        }
+        .check-item.visible { opacity: 1; transform: translateX(0); }
+        .check-circle {
+            width: 30px; height: 30px; border: 2px solid #5c4112; transform: rotate(45deg);
+            display: grid; place-items: center; font-size: 14px;
+        }
+        .check-item.active .check-circle { border-color: var(--royal-gold); box-shadow: 0 0 15px var(--royal-gold); background: #2b0000; }
+        .check-item.done { color: var(--text-light); text-shadow: 0 0 10px var(--royal-gold); }
+        .check-item.done .check-circle { background: var(--royal-gold); border-color: var(--royal-gold); color: #000; }
+
+        /* --- 5. DASHBOARD --- */
+        #dashboard { display: none; width: 100%; margin-top: 20px; animation: slamDown 1s ease; }
+        .dash-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
+
+        .panel {
+            background: rgba(20, 5, 5, 0.9); border: 2px solid var(--war-gold);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); padding: 30px; position: relative;
+        }
+        .panel::before { content:''; position:absolute; top:4px; left:4px; width:10px; height:10px; border-top:2px solid var(--royal-gold); border-left:2px solid var(--royal-gold); }
+        .panel::after { content:''; position:absolute; bottom:4px; right:4px; width:10px; height:10px; border-bottom:2px solid var(--royal-gold); border-right:2px solid var(--royal-gold); }
+
+        .panel-score { display: flex; flex-direction: column; align-items: center; }
+        .gauge-wrap { position: relative; width: 220px; height: 220px; margin: 20px 0; }
+        .gauge-bg { fill: none; stroke: #330000; stroke-width: 15; }
+        .gauge-fill {
+            fill: none; stroke: var(--royal-gold); stroke-width: 15; stroke-linecap: round;
+            stroke-dasharray: 565; stroke-dashoffset: 565; transition: stroke-dashoffset 2s ease-out;
+            transform: rotate(-90deg); transform-origin: center; filter: drop-shadow(0 0 20px var(--royal-gold));
+        }
+        .score-val { 
+            position: absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            font-size: 4rem; font-family: 'Cinzel', serif; font-weight: 900; color: #fff; 
+            text-shadow: 0 0 20px var(--royal-gold);
+        }
+
+        .panel-resume { padding: 0; display: flex; flex-direction: column; min-height: 600px; }
+        .resume-header {
+            padding: 20px 30px; border-bottom: 2px solid var(--war-gold);
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .toggle-switch {
+            width: 220px; height: 44px; background: #1a0505; border: 1px solid var(--war-gold);
+            position: relative; display: flex; align-items: center; cursor: pointer;
+        }
+        .toggle-knob {
+            position: absolute; width: 50%; height: 100%; background: var(--war-gold);
+            transition: 0.4s ease; left: 0; z-index: 1; border: 1px solid #fff;
+        }
+        .toggle-switch.active .toggle-knob { left: 50%; background: var(--royal-gold); box-shadow: 0 0 20px var(--royal-gold); }
+        .toggle-labels { width: 100%; display: flex; justify-content: space-between; z-index: 2; }
+        .t-label { flex: 1; text-align: center; font-size: 0.8rem; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; }
+
+        .resume-content { padding: 40px; flex: 1; line-height: 1.8; color: #e0d0b0; background: url('https://www.transparenttextures.com/patterns/dark-leather.png'); }
+        .highlight { color: var(--royal-gold); font-weight: bold; text-decoration: underline; text-decoration-color: #880000; }
+        
+        #viewOriginal { filter: sepia(100%); opacity: 0.7; }
+        #viewEnhanced { display: none; animation: fadeIn 0.5s; }
+        
+        .enh-header { border-left: 4px solid var(--royal-gold); padding-left: 20px; margin-bottom: 30px; }
+        .enh-h1 { font-family: 'Cinzel'; font-size: 2rem; color: var(--royal-gold); }
+
+        .btn-download {
+            width: 100%; padding: 25px; background: #1a0505; color: var(--royal-gold);
+            border: none; border-top: 2px solid var(--war-gold); cursor: pointer;
+            font-family: 'Cinzel'; font-size: 1.1rem; letter-spacing: 3px; font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-download:hover { background: var(--royal-gold); color: #000; box-shadow: 0 0 50px rgba(255, 215, 0, 0.3); }
+
+        /* --- 6. THANK YOU --- */
+        #thankYouSection {
+            display: none; position: fixed; inset: 0; background: rgba(10,0,0,0.98); z-index: 300;
+            justify-content: center; align-items: center; flex-direction: column;
+            animation: fadeIn 1s;
+        }
+        .ty-symbol {
+            font-size: 6rem; color: var(--royal-gold); margin-bottom: 20px;
+            animation: bounce 2s infinite; text-shadow: 0 0 50px red;
+        }
+
+        /* KEYFRAMES */
+        @keyframes slamDown { 0% { transform: translateY(-100px) scale(1.5); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes floatWeapon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        @keyframes spinFire { 100% { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { transform: translateX(-150%) skewX(-20deg); } 100% { transform: translateX(150%) skewX(-20deg); } }
+        @keyframes pulseText { 0% { opacity: 0.7; } 50% { opacity: 1; text-shadow: 0 0 40px red; } 100% { opacity: 0.7; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        @media(max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } #processingScreen { grid-template-columns: 1fr; } .skeleton-card { display: none; } }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic">
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/09/audio_c8c8a73467.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="sound-toggle" id="soundToggle" title="Toggle Music">🔊</div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="container">
+        <header id="mainHeader">
+            <h1 style="font-size: 3rem;" class="gold-text">KINGDOM OF MAHISHMATI</h1>
+            <p>ROYAL RESUME FORGE</p>
+        </header>
+
+        <div class="upload-wrapper" id="uploadWrapper">
+            <div class="drop-zone" id="dropZone">
+                <div class="icon-sword">⚔️</div>
+                <h2 style="font-size: 1.5rem; color:var(--royal-gold);">PRESENT YOUR SCROLL</h2>
+                <p style="color: #a08050; margin-top:10px;">PDF • DOCX • TXT</p>
+                <input type="file" id="fileInput" accept=".pdf,.docx,.txt" style="display:none;">
+            </div>
+            <button class="btn-analyze" id="analyzeBtn">FORGE DESTINY</button>
+        </div>
+
+        <div id="uploadModal">
+            <div class="modal-content">
+                <h3 class="gold-text" style="margin-bottom: 20px;">SENDING TO THE KING...</h3>
+                <div class="progress-container">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+                <p id="uploadPercent" style="color:#fff; font-size: 1.2rem;">0%</p>
+            </div>
+        </div>
+
+        <div id="redirectScreen">
+            <div class="fire-ring"></div>
+            <div class="sword-container">
+                <div class="sword-blade"></div>
+                <div class="sword-guard"></div>
+                <div class="sword-hilt"></div>
+            </div>
+            <h3 class="loading-text">JAI MAHISHMATI...</h3>
+        </div>
+
+        <div id="processingScreen">
+            <div class="skeleton-card">
+                <div class="skeleton-shimmer"></div>
+                <div style="position:absolute; top:50px; left:50%; transform:translateX(-50%); width:100px; height:100px; border-radius:50%; border:5px solid #330000;"></div>
+                <div style="position:absolute; top:200px; left:20px; width:80%; height:10px; background:#330000;"></div>
+                <div style="position:absolute; top:230px; left:20px; width:60%; height:10px; background:#330000;"></div>
+            </div>
+            <div class="checklist-container">
+                <div class="check-item" id="chk1"><div class="check-circle">⚔️</div><span>SHARPENING WEAPONS</span></div>
+                <div class="check-item" id="chk2"><div class="check-circle">🛡️</div><span>ANALYZING DEFENSES</span></div>
+                <div class="check-item" id="chk3"><div class="check-circle">🦁</div><span>SUMMONING THE ARMY</span></div>
+                <div class="check-item" id="chk4"><div class="check-circle">👑</div><span>CORONATION READY</span></div>
+            </div>
+        </div>
+
+        <div id="dashboard">
+            <div class="dash-grid">
+                <div class="panel panel-score">
+                    <h3 style="color:#a08050; margin-bottom:20px;">ROYAL STRENGTH</h3>
+                    <div class="gauge-wrap">
+                        <svg width="220" height="220">
+                            <circle cx="110" cy="110" r="90" class="gauge-bg" />
+                            <circle cx="110" cy="110" r="90" class="gauge-fill" id="atsGauge" />
+                        </svg>
+                        <div class="score-val" id="scoreVal">0</div>
+                    </div>
+                </div>
+                <div class="panel panel-resume">
+                    <div class="resume-header">
+                        <h3 style="color:var(--royal-gold);">SCROLL VIEWER</h3>
+                        <div class="toggle-switch" id="toggleSwitch">
+                            <div class="toggle-knob"></div>
+                            <div class="toggle-labels">
+                                <div class="t-label">OLD SCROLL</div>
+                                <div class="t-label">ROYAL DECREE</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="resume-content">
+                        <div id="viewOriginal">
+                            <h2>John Doe</h2>
+                            <p style="margin-bottom:20px;">Warrior. 5 years experience.</p>
+                            <ul>
+                                <li>Fought in many wars.</li>
+                                <li>Led the army to victory.</li>
+                                <li>Used sword and shield.</li>
+                            </ul>
+                        </div>
+                        <div id="viewEnhanced">
+                            <div class="enh-header">
+                                <div class="enh-h1">AMARENDRA BAAHUBALI</div>
+                                <div style="color:var(--war-gold); letter-spacing:2px;">CROWN PRINCE OF MAHISHMATI</div>
+                            </div>
+                            <p style="margin-bottom: 20px; color:#fff;">Legendary warrior and strategic leader with <span class="highlight">unmatched valor</span> in defending the kingdom.</p>
+                            <h4 style="color:var(--royal-gold); margin-bottom:10px;">ROYAL CONQUESTS</h4>
+                            <p style="margin-bottom:10px;">• <span class="highlight">Commanded</span> the Kalakeya war strategy ensuring absolute victory.</p>
+                            <p>• <span class="highlight">Unified</span> the people through just rule and strength.</p>
+                        </div>
+                    </div>
+                    <button class="btn-download" id="downloadBtn">SEAL & DOWNLOAD</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="thankYouSection">
+        <div class="ty-symbol">🦁</div>
+        <div class="gold-text" style="font-size:3rem; margin-bottom:10px;">VICTORY!</div>
+        <div style="color:#d4af37; letter-spacing:2px;">THE SCROLL HAS BEEN FORGED</div>
+        <p style="color:#886622; margin-top:30px;">RETURNING TO KINGDOM IN 5 SECONDS...</p>
+    </div>
+
+    <script>
+        // --- AUDIO LOGIC ---
+        const bgMusic = document.getElementById('bgMusic');
+        const soundToggle = document.getElementById('soundToggle');
+        bgMusic.volume = 1.0; // MAX VOLUME
+
+        // Toggle Button
+        soundToggle.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.play();
+                soundToggle.textContent = '🔊';
+            } else {
+                bgMusic.pause();
+                soundToggle.textContent = '🔇';
+            }
+        });
+
+        // --- CANVAS FIRE EFFECT ---
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + Math.random() * 100;
+                this.size = Math.random() * 3;
+                this.speedY = Math.random() * 2 + 1;
+                this.color = `rgba(255, ${Math.random()*150}, 0, ${Math.random()})`;
+            }
+            update() {
+                this.y -= this.speedY;
+                if(this.y < 0) this.y = canvas.height + 10;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for(let i=0; i<100; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- APP LOGIC ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const uploadWrapper = document.getElementById('uploadWrapper');
+        const mainHeader = document.getElementById('mainHeader');
+        
+        const uploadModal = document.getElementById('uploadModal');
+        const redirectScreen = document.getElementById('redirectScreen');
+        const processingScreen = document.getElementById('processingScreen');
+        const dashboard = document.getElementById('dashboard');
+        const thankYouSection = document.getElementById('thankYouSection');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.transform = "scale(1.02)"; });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.style.transform = "scale(1)"; });
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+        fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFile(e.target.files[0]); });
+
+        function handleFile(file) {
+            dropZone.innerHTML = `<div style="font-size:3rem; color:var(--royal-gold);">📜</div><h3 style="color:#fff; margin-top:10px;">${file.name}</h3><p style="color:#d4af37;">ACCEPTED</p>`;
+            analyzeBtn.style.display = "block";
+        }
+
+        analyzeBtn.addEventListener('click', () => {
+            // FORCE START MUSIC
+            bgMusic.play().catch(e => console.log("Audio autoplay prevented by browser"));
+            
+            uploadModal.style.display = "flex";
+            let width = 0;
+            const bar = document.getElementById('progressBar');
+            const txt = document.getElementById('uploadPercent');
+            const interval = setInterval(() => {
+                width += Math.random() * 5; 
+                if(width >= 100) { width = 100; clearInterval(interval); setTimeout(triggerRedirect, 400); }
+                bar.style.width = width + "%"; txt.innerText = Math.floor(width) + "%";
+            }, 50);
+        });
+
+        function triggerRedirect() {
+            uploadModal.style.display = "none";
+            uploadWrapper.style.display = "none";
+            mainHeader.style.opacity = "0"; 
+            redirectScreen.style.display = "flex";
+            setTimeout(triggerProcessing, 3000); 
+        }
+
+        function triggerProcessing() {
+            redirectScreen.style.display = "none";
+            processingScreen.style.display = "grid";
+            const items = ['chk1', 'chk2', 'chk3', 'chk4'];
+            let index = 0;
+            function nextItem() {
+                if(index < items.length) {
+                    const el = document.getElementById(items[index]);
+                    el.classList.add('visible', 'active');
+                    setTimeout(() => { el.classList.remove('active'); el.classList.add('done'); index++; nextItem(); }, 800);
+                } else { setTimeout(showDashboard, 600); }
+            }
+            nextItem();
+        }
+
+        function showDashboard() {
+            processingScreen.style.display = "none";
+            mainHeader.style.opacity = "1"; 
+            dashboard.style.display = "block";
+            setTimeout(() => { document.getElementById('toggleSwitch').click(); }, 1000);
+            const gauge = document.getElementById('atsGauge');
+            setTimeout(() => { gauge.style.strokeDashoffset = 565 - (565 * 0.98); }, 500);
+            let count = 0;
+            const counter = setInterval(() => {
+                document.getElementById('scoreVal').innerText = count;
+                if(count >= 98) clearInterval(counter);
+                count++;
+            }, 20);
+        }
+
+        const toggleSwitch = document.getElementById('toggleSwitch');
+        const viewOriginal = document.getElementById('viewOriginal');
+        const viewEnhanced = document.getElementById('viewEnhanced');
+
+        toggleSwitch.addEventListener('click', () => {
+            toggleSwitch.classList.toggle('active');
+            if(toggleSwitch.classList.contains('active')) {
+                viewOriginal.style.display = 'none';
+                viewEnhanced.style.display = 'block';
+            } else {
+                viewOriginal.style.display = 'block';
+                viewEnhanced.style.display = 'none';
+            }
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            // Fade out music
+            let vol = 1.0;
+            const fadeAudio = setInterval(() => {
+                if (vol > 0) {
+                    vol -= 0.05;
+                    bgMusic.volume = Math.max(0, vol);
+                } else {
+                    clearInterval(fadeAudio);
+                    bgMusic.pause();
+                }
+            }, 200);
+
+            dashboard.style.display = 'none';
+            thankYouSection.style.display = 'flex';
+            setTimeout(() => { location.reload(); }, 5000);
+        });
+    </script>
+</body>
+</html>
