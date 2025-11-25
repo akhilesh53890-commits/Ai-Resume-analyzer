@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS AI | File Resume Analyzer</title>
+    <title>NEXUS AI | Resume Enhancer</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -17,12 +17,7 @@
             --border-color: rgba(0, 242, 255, 0.2);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
         body {
             background-color: var(--bg-dark);
@@ -32,204 +27,132 @@
             color: var(--text-main);
             font-family: 'Rajdhani', sans-serif;
             min-height: 100vh;
-            overflow-x: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        /* --- Typography --- */
-        h1, h2, h3 {
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
         .gradient-text {
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        /* --- Layout --- */
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            padding: 40px 20px;
-            position: relative;
-            z-index: 2;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            animation: fadeInDown 1s ease-out;
-        }
-
-        header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            margin-top: 10px;
-            letter-spacing: 1px;
-        }
-
-        /* --- File Upload Zone --- */
-        .upload-container {
-            position: relative;
-            width: 100%;
-            max-width: 700px;
-            margin: 0 auto;
-            perspective: 1000px;
-            animation: fadeInUp 0.8s ease-out 0.3s backwards;
-        }
-
+        .container { width: 100%; max-width: 1100px; padding: 40px 20px; z-index: 2; }
+        header { text-align: center; margin-bottom: 50px; }
+        
+        /* --- UPLOAD SECTION --- */
+        .upload-container { width: 100%; max-width: 700px; margin: 0 auto; }
         .drop-zone {
-            background: var(--bg-panel);
-            backdrop-filter: blur(12px);
-            border: 2px dashed var(--border-color);
-            border-radius: 20px;
-            height: 350px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            background: var(--bg-panel); backdrop-filter: blur(12px);
+            border: 2px dashed var(--border-color); border-radius: 20px;
+            height: 300px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer;
+            transition: 0.3s; position: relative; overflow: hidden;
         }
-
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--secondary);
-            box-shadow: 0 0 50px rgba(255, 0, 85, 0.2);
-            transform: translateY(-5px);
-        }
-
-        .drop-zone input[type="file"] { display: none; }
-
-        .icon-container {
-            font-size: 4rem;
-            color: var(--primary);
-            margin-bottom: 20px;
-            transition: 0.3s;
-        }
-
-        .drop-zone:hover .icon-container {
-            transform: scale(1.1);
-            color: var(--secondary);
-            text-shadow: 0 0 20px var(--secondary);
-        }
-
-        .upload-text { font-size: 1.5rem; font-weight: 600; margin-bottom: 10px; }
-        .upload-sub { color: var(--text-muted); font-size: 0.9rem; }
-
-        /* Scanning Line Animation */
+        .drop-zone:hover { border-color: var(--secondary); box-shadow: 0 0 30px rgba(255, 0, 85, 0.2); }
+        .icon-container { font-size: 4rem; color: var(--primary); margin-bottom: 20px; transition: 0.3s; }
+        .drop-zone:hover .icon-container { transform: scale(1.1); color: var(--secondary); }
         .scan-line {
-            position: absolute;
-            width: 100%; height: 2px; background: var(--primary);
-            box-shadow: 0 0 10px var(--primary); top: 0; left: 0; opacity: 0;
-            pointer-events: none;
+            position: absolute; width: 100%; height: 2px; background: var(--primary);
+            box-shadow: 0 0 10px var(--primary); top: 0; left: 0; opacity: 0; pointer-events: none;
         }
         .drop-zone.scanning .scan-line { opacity: 1; animation: scanMove 2s infinite linear; }
         @keyframes scanMove { 0% { top: 0%; } 100% { top: 100%; } }
 
-        /* File Info Display */
-        #fileInfo {
-            display: none; margin-top: 20px; padding: 15px;
-            background: rgba(0, 242, 255, 0.1); border: 1px solid var(--primary);
-            border-radius: 8px; color: var(--primary); font-family: 'Orbitron';
-            letter-spacing: 1px; width: 100%; text-align: center;
-        }
-
-        /* Button */
         .btn-analyze {
             display: none; margin: 30px auto 0; padding: 16px 50px;
             font-size: 1.2rem; font-family: 'Orbitron', sans-serif; font-weight: 700;
             color: #000; background: linear-gradient(90deg, var(--primary), var(--secondary));
             border: none; border-radius: 4px; cursor: pointer;
             clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
-            transition: all 0.3s ease; box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+            transition: 0.3s; box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
         }
-        .btn-analyze:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 0, 85, 0.6); color: #fff; }
+        .btn-analyze:hover { transform: scale(1.05); color: #fff; }
 
-        /* --- Results Dashboard --- */
-        #resultsSection {
-            display: none; width: 100%; max-width: 1000px; margin-top: 50px;
-            flex-direction: column; gap: 20px; animation: slideUp 0.8s ease-out;
+        /* --- CHECKLIST LOADER (New Feature) --- */
+        #checklistLoader {
+            display: none; width: 100%; max-width: 600px; margin: 40px auto;
+            background: rgba(10, 15, 20, 0.9); border: 1px solid var(--primary);
+            border-radius: 12px; padding: 30px;
+        }
+        .check-item {
+            display: flex; align-items: center; gap: 15px; margin-bottom: 20px;
+            font-size: 1.2rem; opacity: 0.5; transition: 0.3s;
+        }
+        .check-item.active { opacity: 1; color: #fff; text-shadow: 0 0 10px var(--primary); }
+        .check-icon {
+            width: 24px; height: 24px; border: 2px solid #555; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .check-item.completed .check-icon {
+            border-color: var(--primary); background: var(--primary); color: #000;
+        }
+        .check-item.completed .check-icon::after { content: '✓'; font-weight: bold; }
+
+        /* --- RESULTS SECTION --- */
+        #resultsSection { display: none; margin-top: 30px; animation: slideUp 0.8s ease-out; }
+        
+        .toggle-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); padding: 15px 25px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;
         }
 
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative; width: 200px; height: 40px; background: #222;
+            border-radius: 20px; display: flex; align-items: center; padding: 4px;
+            cursor: pointer; border: 1px solid #444;
+        }
+        .toggle-option { flex: 1; text-align: center; z-index: 2; font-size: 0.9rem; font-weight: bold; transition: 0.3s; }
+        .toggle-slider {
+            position: absolute; width: 50%; height: 32px; background: var(--secondary);
+            border-radius: 16px; transition: 0.3s; z-index: 1; box-shadow: 0 0 15px var(--secondary);
+        }
+        .toggle-switch.enhanced .toggle-slider { transform: translateX(100%); background: var(--primary); box-shadow: 0 0 15px var(--primary); }
+        
+        .dashboard-grid {
+            display: grid; grid-template-columns: 1fr 350px; gap: 20px;
         }
 
-        .card {
-            background: rgba(10, 10, 15, 0.8);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 25px; position: relative;
-            backdrop-filter: blur(10px); transition: 0.3s;
+        /* Resume Preview Card */
+        .resume-card {
+            background: rgba(10, 10, 15, 0.8); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 30px; min-height: 500px;
+            position: relative; transition: 0.3s;
         }
-        .card:hover { border-color: var(--primary); box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
-        .card h3 {
-            color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;
+        
+        /* Original View Styles */
+        #originalView { display: block; filter: grayscale(100%); opacity: 0.8; }
+        
+        /* Enhanced View Styles */
+        #enhancedView { 
+            display: none; 
+            background: radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.05), transparent);
+        }
+        #enhancedView h3 { color: var(--primary); }
+        #enhancedView li { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+
+        /* Score Card Side Panel */
+        .score-card {
+            background: rgba(10, 10, 15, 0.8); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 25px; text-align: center; height: fit-content;
         }
 
-        /* --- NEW ATS SCORE GAUGE --- */
-        .gauge-wrapper {
-            position: relative;
-            width: 160px; height: 160px; margin: 0 auto;
-        }
+        .gauge-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto; }
         .gauge-bg { fill: none; stroke: #222; stroke-width: 12; }
         .gauge-fill {
             fill: none; stroke: var(--primary); stroke-width: 12;
             stroke-dasharray: 440; stroke-dashoffset: 440;
-            transition: stroke-dashoffset 1.5s ease-out, stroke 0.5s;
-            stroke-linecap: round;
-            transform-origin: center;
-            transform: rotate(-90deg);
-            filter: drop-shadow(0 0 8px var(--primary));
+            transition: stroke-dashoffset 1.5s ease-out; transform: rotate(-90deg); transform-origin: center;
         }
-        .score-text-overlay {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); text-align: center;
-        }
-        .score-val { font-size: 3rem; font-weight: 700; font-family: 'Orbitron'; color: #fff; }
-        .score-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; }
+        .score-val { font-size: 3rem; font-weight: 700; font-family: 'Orbitron'; color: #fff; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
-        /* Progress Bars */
-        .progress-item { margin-bottom: 15px; }
-        .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; }
-        .progress-bg { height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0; transition: width 1s cubic-bezier(0.1, 0.7, 1.0, 0.1); }
+        .stat-row { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
 
-        /* Suggestion List */
-        .suggestion-list { list-style: none; }
-        .suggestion-list li {
-            padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex; gap: 10px; align-items: start; font-size: 0.95rem;
-        }
-        .bullet { color: var(--secondary); font-weight: bold; }
-
-        /* Animations */
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Loader */
-        .loader-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.9); z-index: 100;
-            display: none; justify-content: center; align-items: center; flex-direction: column;
-        }
-        .spinner {
-            width: 60px; height: 60px; border: 4px solid rgba(0, 242, 255, 0.3);
-            border-top: 4px solid var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
-        .loading-text { font-family: 'Orbitron'; color: var(--primary); animation: pulse 1.5s infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
     </style>
 </head>
 <body>
@@ -237,260 +160,184 @@
     <div class="container">
         <header>
             <h1>NEXUS <span class="gradient-text">RESUME AI</span></h1>
-            <p>Next-Gen Neural File Analysis</p>
+            <p>Upload. Analyze. Enhance.</p>
         </header>
 
         <div class="upload-container" id="uploadSection">
             <div class="drop-zone" id="dropZone">
                 <div class="scan-line"></div>
-                <div class="icon-container">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                </div>
-                <div class="upload-text">Drag & Drop Resume</div>
-                <div class="upload-sub">Supported Formats: PDF, DOCX, TXT</div>
-                <input type="file" id="fileInput" accept=".pdf,.docx,.txt">
+                <div class="icon-container">📂</div>
+                <div style="font-size: 1.5rem; font-weight: bold;">Drag & Drop Resume</div>
+                <div style="color: var(--text-muted);">PDF, DOCX, TXT Supported</div>
+                <input type="file" id="fileInput" accept=".pdf,.docx,.txt" style="display:none;">
             </div>
-
-            <div id="fileInfo"></div>
-            <button class="btn-analyze" id="analyzeBtn">INITIATE ANALYSIS</button>
+            <button class="btn-analyze" id="analyzeBtn">START AI ANALYSIS</button>
         </div>
 
-        <div id="resultsSection" style="display:none;">
-            <div class="stats-grid">
+        <div id="checklistLoader">
+            <h3 style="margin-bottom: 20px; color: var(--primary);">PROCESSING...</h3>
+            <div class="check-item" id="step1"><div class="check-icon"></div> Parsing resume structure</div>
+            <div class="check-item" id="step2"><div class="check-icon"></div> Analyzing professional experience</div>
+            <div class="check-item" id="step3"><div class="check-icon"></div> Extracting key skills & keywords</div>
+            <div class="check-item" id="step4"><div class="check-icon"></div> Generating AI recommendations</div>
+        </div>
+
+        <div id="resultsSection">
+            
+            <div class="toggle-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2rem;">📄 Your Resume Analysis</span>
+                </div>
+                <div class="toggle-switch" id="viewToggle">
+                    <div class="toggle-slider"></div>
+                    <div class="toggle-option" style="color:white;">Original</div>
+                    <div class="toggle-option" style="color:white;">Enhanced</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
                 
-                <div class="card" style="text-align: center;">
-                    <h3>ATS COMPATIBILITY SCORE</h3>
+                <div class="resume-card">
+                    <div id="originalView">
+                        <h3 style="color:#888;">ORIGINAL CONTENT</h3>
+                        <p style="color:#666; margin-top:10px;">[Raw text from file...]</p>
+                        <div style="margin-top: 20px; line-height: 1.6; color: #aaa;">
+                            John Doe<br>
+                            Marketing Manager<br><br>
+                            Responsibilites:<br>
+                            - Worked on marketing campaigns.<br>
+                            - Helped increase sales.<br>
+                            - Used social media for posts.<br>
+                            - Managed a team of 3 people.<br>
+                        </div>
+                    </div>
+
+                    <div id="enhancedView">
+                        <h3 class="gradient-text">✨ AI ENHANCED VERSION</h3>
+                        <div style="margin-top: 20px; line-height: 1.6;">
+                            <strong style="font-size: 1.2rem;">JOHN DOE</strong><br>
+                            <span style="color:var(--primary)">Senior Marketing Strategist</span><br><br>
+                            <strong>PROFESSIONAL SUMMARY</strong><br>
+                            Results-driven Marketing Manager with 5+ years of experience spearheading high-impact campaigns.<br><br>
+                            <strong>KEY ACHIEVEMENTS</strong><br>
+                            <ul>
+                                <li style="margin-bottom:10px;">🚀 <b>Orchestrated</b> multi-channel marketing campaigns, driving a <b>40% increase</b> in quarterly sales revenue.</li>
+                                <li style="margin-bottom:10px;">📈 <b>Leveraged</b> social media analytics to optimize engagement, resulting in <b>15k+ new followers</b>.</li>
+                                <li style="margin-bottom:10px;">👥 <b>Led and mentored</b> a high-performing team of 3, improving project delivery time by 20%.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="score-card">
+                    <h3 style="margin-bottom: 20px; font-size: 1rem;">ATS COMPATIBILITY</h3>
                     <div class="gauge-wrapper">
                         <svg width="160" height="160">
                             <circle cx="80" cy="80" r="70" class="gauge-bg" />
                             <circle cx="80" cy="80" r="70" class="gauge-fill" id="atsGauge" />
                         </svg>
-                        <div class="score-text-overlay">
-                            <div class="score-val" id="finalScore">0</div>
-                            <div class="score-label">OUT OF 100</div>
-                        </div>
+                        <div class="score-val" id="scoreValue">0</div>
                     </div>
-                    <div id="scoreComment" style="color:var(--primary); font-weight:bold; margin-top:15px;">ANALYZING...</div>
-                </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <div class="stat-row"><span>Keywords</span> <span style="color:var(--primary)">92%</span></div>
+                        <div class="stat-row"><span>Grammar</span> <span style="color:var(--secondary)">85%</span></div>
+                        <div class="stat-row"><span>Impact</span> <span style="color:var(--accent)">78%</span></div>
+                    </div>
 
-                <div class="card">
-                    <h3>CORPORATE MATCH PROBABILITY</h3>
-                    <div id="companyList">
-                        </div>
-                </div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="card">
-                    <h3>DETECTED ISSUES</h3>
-                    <ul class="suggestion-list" id="grammarList">
-                        </ul>
-                </div>
-
-                <div class="card">
-                    <h3>OPTIMIZATION STRATEGY</h3>
-                    <ul class="suggestion-list" id="strategyList">
-                        </ul>
+                    <button onclick="location.reload()" style="margin-top:20px; background:transparent; border:1px solid #555; color:#aaa; padding:10px; width:100%; cursor:pointer;">Analyze New File</button>
                 </div>
             </div>
 
-            <button class="btn-analyze" onclick="location.reload()" style="display:block; width:200px;">SCAN NEW FILE</button>
         </div>
     </div>
 
-    <div class="loader-overlay" id="loader">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loadingText">INITIALIZING NEURAL NET...</div>
-    </div>
-
     <script>
-        /* --- LOGIC --- */
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
         const analyzeBtn = document.getElementById('analyzeBtn');
-        const loader = document.getElementById('loader');
-        const loadingText = document.getElementById('loadingText');
-        
-        let uploadedFile = null;
+        const uploadSection = document.getElementById('uploadSection');
+        const checklistLoader = document.getElementById('checklistLoader');
+        const resultsSection = document.getElementById('resultsSection');
+        const viewToggle = document.getElementById('viewToggle');
+        const originalView = document.getElementById('originalView');
+        const enhancedView = document.getElementById('enhancedView');
 
-        // 1. Drag & Drop Interactions
+        // Drag & Drop
         dropZone.addEventListener('click', () => fileInput.click());
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('scanning'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('scanning'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('scanning');
+            if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
         });
+        fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFile(e.target.files[0]); });
 
-        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
-        });
-
-        dropZone.addEventListener('drop', handleDrop, false);
-        fileInput.addEventListener('change', handleFiles, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles({ target: { files: files } });
-        }
-
-        function handleFiles(e) {
-            const files = e.target.files;
-            if (files.length > 0) {
-                uploadedFile = files[0];
-                showFileUI(uploadedFile.name);
-            }
-        }
-
-        function showFileUI(fileName) {
-            dropZone.classList.add('scanning'); // Add scanning animation
-            fileInfo.style.display = 'block';
-            fileInfo.innerText = `FILE DETECTED: ${fileName.toUpperCase()}`;
+        function handleFile(file) {
+            dropZone.innerHTML = `<div class="icon-container">📄</div><div style="font-size:1.2rem;">${file.name}</div>`;
+            dropZone.classList.add('scanning');
             analyzeBtn.style.display = 'block';
-            analyzeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        // 2. Analysis Logic
+        // Analysis Process
         analyzeBtn.addEventListener('click', () => {
-            if (!uploadedFile) return;
-            
-            loader.style.display = 'flex';
-            
-            const stages = [
-                "EXTRACTING METADATA...",
-                "CHECKING GRAMMAR & SYNTAX...",
-                "MATCHING KEYWORDS...",
-                "CALCULATING ATS SCORE...",
-                "FINALIZING REPORT..."
-            ];
+            uploadSection.style.display = 'none';
+            checklistLoader.style.display = 'block';
 
-            let stageIndex = 0;
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            let currentStep = 0;
+
             const interval = setInterval(() => {
-                if (stageIndex < stages.length) {
-                    loadingText.innerText = stages[stageIndex];
-                    stageIndex++;
+                if (currentStep < steps.length) {
+                    const el = document.getElementById(steps[currentStep]);
+                    el.classList.add('active');
+                    // Mark previous as completed
+                    if(currentStep > 0) document.getElementById(steps[currentStep-1]).classList.add('completed');
+                    
+                    currentStep++;
                 } else {
                     clearInterval(interval);
-                    // Determine score type based on file
-                    if (uploadedFile.type === "text/plain") {
-                        const reader = new FileReader();
-                        reader.onload = function(e) { performAnalysis(e.target.result); };
-                        reader.readAsText(uploadedFile);
-                    } else {
-                        performAnalysis(null); // Simulate for PDF/DOCX
-                    }
+                    document.getElementById(steps[steps.length-1]).classList.add('completed');
+                    setTimeout(showResults, 800);
                 }
-            }, 800);
+            }, 1000); // 1 second per step
         });
 
-        function performAnalysis(textContent) {
-            loader.style.display = 'none';
-            document.getElementById('uploadSection').style.display = 'none';
-            document.getElementById('resultsSection').style.display = 'flex';
+        function showResults() {
+            checklistLoader.style.display = 'none';
+            resultsSection.style.display = 'block';
 
-            let score = 0;
-            let keywordsFound = [];
-            
-            if (textContent) {
-                const keywords = ['Javascript', 'Python', 'React', 'Leadership', 'SQL', 'Project Management', 'CSS', 'HTML'];
-                score = 50; 
-                if (textContent.length > 500) score += 20;
-                keywords.forEach(k => {
-                    if (new RegExp(k, 'i').test(textContent)) { score += 5; keywordsFound.push(k); }
-                });
-                score = Math.min(score, 98);
-            } else {
-                score = Math.floor(Math.random() * (95 - 65 + 1) + 65);
-            }
-
-            // --- ANIMATE GAUGE ---
+            // Animate Gauge
+            const score = 88; // Target Score
             const circle = document.getElementById('atsGauge');
-            const circumference = 2 * Math.PI * 70; // r=70
+            const circumference = 2 * Math.PI * 70;
             const offset = circumference - (score / 100) * circumference;
             
-            // Set Color based on Score
-            let color = "#ff0055"; // Pink (Low)
-            if(score > 75) color = "#00f2ff"; // Cyan (High)
-            circle.style.stroke = color;
-
-            // Trigger Animation
-            setTimeout(() => {
-                circle.style.strokeDashoffset = offset;
-            }, 100);
-
-            // Animate Number Text
-            animateValue("finalScore", 0, score, 1500);
+            setTimeout(() => { circle.style.strokeDashoffset = offset; }, 500);
             
-            const comment = document.getElementById('scoreComment');
-            if(score > 85) { comment.innerText = "EXCELLENT CANDIDATE"; comment.style.color = "#00ff88"; }
-            else if(score > 70) { comment.innerText = "STRONG POTENTIAL"; comment.style.color = "#00f2ff"; }
-            else { comment.innerText = "NEEDS OPTIMIZATION"; comment.style.color = "#ff0055"; }
-
-            // Company Matches
-            const companies = [
-                {name: "GOOGLE", val: score - 5},
-                {name: "AMAZON", val: score + 2},
-                {name: "MICROSOFT", val: score - 2},
-                {name: "NETFLIX", val: score - 10}
-            ];
-            
-            const companyList = document.getElementById('companyList');
-            companyList.innerHTML = "";
-            companies.forEach(c => {
-                let val = Math.min(Math.max(c.val + Math.floor(Math.random()*10 - 5), 10), 99);
-                companyList.innerHTML += `
-                    <div class="progress-item">
-                        <div class="progress-label"><span>${c.name}</span><span>${val}%</span></div>
-                        <div class="progress-bg"><div class="progress-fill" style="width:${val}%"></div></div>
-                    </div>
-                `;
-            });
-
-            // Issues
-            const grammarList = document.getElementById('grammarList');
-            const issues = [
-                "Found 3 instances of passive voice.",
-                "Sentence length exceeds optimal range in 'Summary'.",
-                "Repeated use of 'Responsible for' (Weak Action Verb).",
-                "Missing quantifiable metrics in 'Experience' section."
-            ];
-            const randomIssues = issues.sort(() => 0.5 - Math.random()).slice(0, 3);
-            grammarList.innerHTML = randomIssues.map(i => `<li><span class="bullet">⚠</span> ${i}</li>`).join('');
-
-            // Strategy
-            const strategyList = document.getElementById('strategyList');
-            const strats = [
-                "Replace weak verbs with: 'Orchestrated', 'Spearheaded'.",
-                "Add a 'Skills' section header for better ATS parsing.",
-                "Quantify achievements (e.g., 'Reduced latency by 20%').",
-                "Tailor summary to include keywords: 'Scalability', 'Agile'."
-            ];
-            strategyList.innerHTML = strats.map(s => `<li><span class="bullet">➤</span> ${s}</li>`).join('');
+            let count = 0;
+            const counter = setInterval(() => {
+                document.getElementById('scoreValue').innerText = count;
+                if(count >= score) clearInterval(counter);
+                count++;
+            }, 20);
         }
 
-        function animateValue(id, start, end, duration) {
-            const obj = document.getElementById(id);
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                obj.innerHTML = Math.floor(progress * (end - start) + start);
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
+        // Toggle Logic
+        viewToggle.addEventListener('click', () => {
+            viewToggle.classList.toggle('enhanced');
+            if(viewToggle.classList.contains('enhanced')) {
+                originalView.style.display = 'none';
+                enhancedView.style.display = 'block';
+                enhancedView.style.animation = 'slideUp 0.4s ease';
+            } else {
+                originalView.style.display = 'block';
+                enhancedView.style.display = 'none';
+                originalView.style.animation = 'slideUp 0.4s ease';
+            }
+        });
+
     </script>
 </body>
 </html>
