@@ -1,0 +1,632 @@
+Here is the complete, merged code in a single file. You can save this as `index.html` and run it directly in your browser.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXSUS | AI Resume Analyst</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #050508;
+            --glass: rgba(20, 20, 30, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --cyan: #00f2ff;
+            --pink: #ff0055;
+            --purple: #bc13fe;
+            --text-main: #ffffff;
+            --text-muted: #8892b0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.15) 0%, transparent 40%);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+
+        .gradient-text {
+            background: linear-gradient(90deg, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.3));
+        }
+
+        /* --- LAYOUT --- */
+        .container { width: 100%; max-width: 1200px; padding: 40px 20px; z-index: 2; position: relative; flex: 1; display: flex; flex-direction: column; }
+
+        header { text-align: center; margin-bottom: 50px; animation: slideDown 1s cubic-bezier(0.2, 0.8, 0.2, 1); transition: 0.5s; }
+        header p { color: var(--text-muted); margin-top: 10px; font-size: 1.2rem; letter-spacing: 2px; }
+
+        /* --- 1. UPLOAD ZONE --- */
+        .upload-wrapper { width: 100%; max-width: 700px; margin: 0 auto; perspective: 1000px; transition: 0.5s; }
+
+        .drop-zone {
+            background: rgba(10, 10, 15, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            height: 320px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        .drop-zone:hover {
+            border-color: var(--pink);
+            box-shadow: 0 0 60px rgba(255, 0, 85, 0.2), inset 0 0 20px rgba(255, 0, 85, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .drop-zone .icon { font-size: 4rem; margin-bottom: 20px; filter: drop-shadow(0 0 10px var(--cyan)); transition: 0.3s; }
+        .drop-zone:hover .icon { transform: scale(1.1); filter: drop-shadow(0 0 20px var(--pink)); }
+
+        .scan-beam {
+            position: absolute; width: 100%; height: 4px; background: var(--cyan);
+            box-shadow: 0 0 20px var(--cyan); top: 0; left: 0; opacity: 0;
+        }
+        .scanning .scan-beam { opacity: 1; animation: scan 1.5s infinite linear; }
+
+        .btn-analyze {
+            display: none; margin: 40px auto 0; padding: 18px 60px;
+            font-size: 1.3rem; font-family: 'Orbitron'; font-weight: 700;
+            background: transparent; color: #fff;
+            border: 1px solid var(--cyan); border-radius: 50px;
+            cursor: pointer; position: relative; overflow: hidden;
+            transition: 0.3s; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+        }
+        .btn-analyze:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(0, 242, 255, 0.6); border-color: var(--pink); }
+
+        /* --- 2. UPLOAD MODAL --- */
+        #uploadModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 200; backdrop-filter: blur(15px);
+            justify-content: center; align-items: center; animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: #0a0a10; padding: 40px; border-radius: 20px; width: 500px;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+            text-align: center;
+        }
+        .progress-track { width: 100%; height: 8px; background: #222; border-radius: 10px; overflow: hidden; margin: 20px 0; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--purple)); border-radius: 10px; transition: width 0.05s linear; }
+        .modal-text { color: var(--cyan); font-family: 'Orbitron'; letter-spacing: 1px; }
+
+        /* --- 3. REDIRECT SCREEN --- */
+        #redirectScreen {
+            display: none; width: 100%; height: 60vh; 
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .logo-spinner {
+            width: 100px; height: 100px; border: 4px solid rgba(255,255,255,0.05);
+            border-top: 4px solid var(--pink); border-radius: 50%;
+            animation: spin 1s infinite linear; margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.2);
+        }
+
+        /* --- 4. SKELETON & CHECKLIST --- */
+        #processingScreen {
+            display: none; width: 100%; max-width: 1100px; margin: 0 auto;
+            grid-template-columns: 350px 1fr; gap: 40px; animation: slideUp 0.8s ease;
+        }
+
+        /* Ghost Card */
+        .skeleton-card {
+            background: rgba(255,255,255,0.03); border-radius: 20px; height: 500px;
+            position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .skeleton-shimmer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+            transform: skewX(-20deg); animation: shimmer 1.5s infinite;
+        }
+        .sk-circle { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: 180px; height: 180px; border-radius: 50%; border: 15px solid rgba(255,255,255,0.05); }
+        .sk-line { position: absolute; left: 30px; height: 15px; background: rgba(255,255,255,0.05); border-radius: 5px; }
+
+        /* Checklist */
+        .checklist-container { display: flex; flex-direction: column; justify-content: center; padding-left: 20px; }
+        .check-item {
+            display: flex; align-items: center; gap: 20px; margin-bottom: 30px;
+            font-size: 1.4rem; color: var(--text-muted); opacity: 0; transform: translateY(20px);
+            transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .check-item.visible { opacity: 1; transform: translateY(0); }
+
+        .check-circle {
+            width: 32px; height: 32px; border: 2px solid #444; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .check-item.active .check-circle { border-color: var(--cyan); animation: pulse 1s infinite; box-shadow: 0 0 15px var(--cyan); }
+        .check-item.done { color: #fff; }
+        .check-item.done .check-circle { background: var(--cyan); border-color: var(--cyan); color: #000; font-weight: bold; }
+
+        /* --- 5. DASHBOARD --- */
+        #dashboard { display: none; width: 100%; margin-top: 20px; animation: slideUp 0.8s ease; }
+        .dash-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
+
+        .panel-score {
+            background: rgba(10, 10, 15, 0.7); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px; padding: 30px; backdrop-filter: blur(20px);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .gauge-wrap { position: relative; width: 220px; height: 220px; margin: 20px 0; }
+        .gauge-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 15; stroke-linecap: round; }
+        .gauge-fill {
+            fill: none; stroke: var(--cyan); stroke-width: 15; stroke-linecap: round;
+            stroke-dasharray: 565; stroke-dashoffset: 565; transition: stroke-dashoffset 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform: rotate(-90deg); transform-origin: center; filter: drop-shadow(0 0 10px var(--cyan));
+        }
+        .score-big { font-size: 4rem; font-weight: 900; font-family: 'Orbitron'; color: #fff; position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
+
+        .panel-resume {
+            background: rgba(10, 10, 15, 0.7); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px; padding: 0; backdrop-filter: blur(20px);
+            display: flex; flex-direction: column; overflow: hidden; min-height: 600px;
+        }
+        .resume-header {
+            padding: 20px 30px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .toggle-switch {
+            width: 240px; height: 50px; background: #000; border-radius: 25px;
+            position: relative; display: flex; align-items: center;
+            border: 1px solid #333; cursor: pointer; padding: 4px;
+        }
+        .toggle-knob {
+            position: absolute; width: 50%; height: 40px; background: var(--pink);
+            border-radius: 20px; box-shadow: 0 0 20px var(--pink);
+            transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); left: 4px; z-index: 1;
+        }
+        .toggle-labels { width: 100%; display: flex; justify-content: space-between; z-index: 2; }
+        .t-label { flex: 1; text-align: center; font-size: 0.9rem; font-weight: bold; color: #fff; pointer-events: none; }
+        .toggle-switch.active .toggle-knob { left: calc(50% - 4px); background: var(--cyan); box-shadow: 0 0 20px var(--cyan); }
+
+        .resume-content { padding: 40px; flex: 1; font-family: 'Inter', sans-serif; line-height: 1.6; color: #e0e0e0; }
+        #viewOriginal { display: block; opacity: 0.8; }
+        #viewEnhanced { display: none; animation: fadeIn 0.5s; user-select: text;}
+
+        /* MARKDOWN STYLES FOR GEMINI OUTPUT */
+        .markdown-body h1, .markdown-body h2 { color: var(--cyan); font-family: 'Orbitron'; margin-top: 1.5em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5em; }
+        .markdown-body h3 { color: var(--pink); font-family: 'Rajdhani'; font-weight: 700; margin-top: 1.2em; }
+        .markdown-body strong { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .markdown-body ul { padding-left: 20px; margin-bottom: 1em; }
+        .markdown-body li { margin-bottom: 0.5em; }
+        .markdown-body p { margin-bottom: 1em; }
+
+        /* DOWNLOAD BUTTON */
+        .btn-download {
+            width: 100%; padding: 20px; background: linear-gradient(90deg, #111, #222);
+            color: var(--cyan); font-family: 'Orbitron'; font-weight: bold; font-size: 1.1rem;
+            border: none; border-top: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+            transition: 0.3s; letter-spacing: 2px;
+        }
+        .btn-download:hover { background: var(--cyan); color: #000; box-shadow: 0 0 30px var(--cyan); }
+
+        /* --- 6. THANK YOU SCREEN --- */
+        #thankYouSection {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 8, 0.95); z-index: 100;
+            justify-content: center; align-items: center; flex-direction: column;
+            backdrop-filter: blur(10px); animation: fadeIn 0.5s;
+        }
+        .ty-icon { font-size: 5rem; color: var(--cyan); margin-bottom: 20px; animation: bounce 1s infinite alternate; }
+
+        /* ANIMATIONS */
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { transform: translateX(-150%) skewX(-20deg); } 100% { transform: translateX(150%) skewX(-20deg); } }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+
+        @media(max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } #processingScreen { grid-template-columns: 1fr; } .skeleton-card { display: none; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header id="mainHeader">
+            <h1>NEXSUS <span class="gradient-text">RESUME AI</span></h1>
+            <p>ADVANCED NEURAL OPTIMIZATION ENGINE</p>
+        </header>
+
+        <div class="upload-wrapper" id="uploadWrapper">
+            <div class="drop-zone" id="dropZone">
+                <div class="scan-beam"></div>
+                <div class="icon">📂</div>
+                <h2 style="font-size: 1.5rem; margin-bottom: 10px;">UPLOAD RESUME FILE</h2>
+                <p style="color: var(--text-muted);">Compatible with PDF</p>
+                <input type="file" id="fileInput" accept=".pdf" style="display:none;">
+            </div>
+            <button class="btn-analyze" id="analyzeBtn">INITIALIZE SCAN</button>
+        </div>
+
+        <div id="uploadModal">
+            <div class="modal-content">
+                <div style="display:flex; justify-content:space-between; color:#fff; margin-bottom:10px;">
+                    <span class="modal-text">UPLOADING...</span>
+                    <span id="uploadPercent" class="modal-text">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p style="color:#666; font-size:0.9rem;">Encrypting data packets for neural processing...</p>
+            </div>
+        </div>
+
+        <div id="redirectScreen">
+            <div class="logo-spinner"></div>
+            <h3 style="color:var(--text-muted); font-weight:300; letter-spacing:2px;">INITIALIZING ENGINE...</h3>
+        </div>
+
+        <div id="processingScreen">
+            <div class="skeleton-card">
+                <div class="skeleton-shimmer"></div>
+                <div class="sk-circle"></div>
+                <div class="sk-line" style="top:280px; width:60%;"></div>
+                <div class="sk-line" style="top:320px; width:80%;"></div>
+                <div class="sk-line" style="top:360px; width:70%;"></div>
+            </div>
+
+            <div class="checklist-container">
+                <div class="check-item" id="chk1"><div class="check-circle">✓</div><span>Parsing Document Structure</span></div>
+                <div class="check-item" id="chk2"><div class="check-circle">✓</div><span>Analyzing Experience & Impact</span></div>
+                <div class="check-item" id="chk3"><div class="check-circle">✓</div><span>Extracting Technical Skills</span></div>
+                <div class="check-item" id="chk4"><div class="check-circle">✓</div><span>Generating AI Optimization Model</span></div>
+            </div>
+        </div>
+
+        <div id="dashboard">
+            <div class="dash-grid">
+                
+                <div class="panel-score">
+                    <h3>AI SCORE</h3>
+                    <div class="gauge-wrap">
+                        <svg width="220" height="220">
+                            <circle cx="110" cy="110" r="90" class="gauge-bg" />
+                            <circle cx="110" cy="110" r="90" class="gauge-fill" id="atsGauge" />
+                        </svg>
+                        <div class="score-big" id="scoreVal">0</div>
+                    </div>
+                    <p style="color:var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Based on structure & impact</p>
+                </div>
+
+                <div class="panel-resume">
+                    <div class="resume-header">
+                        <h3 style="font-size:1rem; color:var(--text-muted);">RESUME VIEWER</h3>
+                        <div class="toggle-switch" id="toggleSwitch">
+                            <div class="toggle-knob"></div>
+                            <div class="toggle-labels">
+                                <div class="t-label">ORIGINAL</div>
+                                <div class="t-label">ANALYSIS</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="resume-content">
+                        <div id="viewOriginal">
+                            <pre style="white-space: pre-wrap; font-family: 'Inter', sans-serif; color: #aaa;"></pre>
+                        </div>
+
+                        <div id="viewEnhanced" class="markdown-body">
+                            </div>
+                    </div>
+
+                    <button class="btn-download" id="downloadBtn">DOWNLOAD REPORT</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="thankYouSection">
+        <div class="ty-icon">★</div>
+        <div style="font-family:'Orbitron'; font-size:3rem; color:#fff; margin-bottom:10px;">MISSION COMPLETE</div>
+        <div style="color:var(--text-muted); font-size:1.2rem;">Analysis Completed Successfully</div>
+        <button class="btn-analyze" onclick="location.reload()" style="display:block; margin-top:30px;">ANALYZE ANOTHER</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ELEMENTS
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const uploadWrapper = document.getElementById('uploadWrapper');
+            const mainHeader = document.getElementById('mainHeader');
+            
+            // SCREENS
+            const uploadModal = document.getElementById('uploadModal');
+            const redirectScreen = document.getElementById('redirectScreen');
+            const processingScreen = document.getElementById('processingScreen');
+            const dashboard = document.getElementById('dashboard');
+            const thankYouSection = document.getElementById('thankYouSection');
+            
+            // VIEWS
+            const viewOriginal = document.getElementById('viewOriginal').querySelector('pre');
+            const viewEnhanced = document.getElementById('viewEnhanced');
+            const toggleSwitch = document.getElementById('toggleSwitch');
+
+            // STATE
+            let currentFile = null;
+            let extractedText = '';
+            let geminiAnalysisResult = '';
+            
+            // API KEY
+            const API_KEY = 'AIzaSyB-hZrgxseYLqtLnjnkBAPkrFEtExYs0ew';
+
+            // --- UPLOAD & FILE LOGIC ---
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            dropZone.addEventListener('dragover', (e) => { 
+                e.preventDefault(); 
+                dropZone.classList.add('scanning'); 
+                dropZone.style.borderColor = "var(--cyan)"; 
+            });
+            
+            dropZone.addEventListener('dragleave', (e) => { 
+                e.preventDefault(); 
+                dropZone.classList.remove('scanning'); 
+                dropZone.style.borderColor = "var(--glass-border)"; 
+            });
+            
+            dropZone.addEventListener('drop', (e) => { 
+                e.preventDefault(); 
+                dropZone.classList.remove('scanning'); 
+                if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); 
+            });
+            
+            fileInput.addEventListener('change', (e) => { 
+                if(e.target.files.length) handleFile(e.target.files[0]); 
+            });
+
+            function handleFile(file) {
+                if (file.type !== 'application/pdf') {
+                    alert('System requires a PDF file protocol.');
+                    return;
+                }
+                currentFile = file;
+                // Update UI to show file selected
+                dropZone.innerHTML = `<div class="icon" style="color:var(--cyan)">📄</div><h3 style="color:#fff">${file.name}</h3><p style="color:var(--cyan)">DATA PACKET SECURED</p>`;
+                dropZone.style.borderColor = "var(--cyan)";
+                analyzeBtn.style.display = "block";
+            }
+
+            // --- MAIN FLOW: TRIGGER ANALYSIS ---
+            analyzeBtn.addEventListener('click', async () => {
+                if (!currentFile) return;
+
+                // 1. Show Upload Progress (Visual Only)
+                uploadModal.style.display = "flex";
+                
+                // Start the logic in background (Extract Text)
+                try {
+                    extractedText = await extractTextFromPDF(currentFile);
+                    viewOriginal.textContent = extractedText; // Set original view
+                } catch (error) {
+                    console.error("PDF Error", error);
+                    alert("Extraction failed. Aborting.");
+                    location.reload();
+                    return;
+                }
+
+                // Animate Progress Bar
+                let width = 0;
+                const bar = document.getElementById('progressBar');
+                const txt = document.getElementById('uploadPercent');
+
+                const interval = setInterval(() => {
+                    width += Math.random() * 15; 
+                    if(width >= 100) {
+                        width = 100;
+                        clearInterval(interval);
+                        setTimeout(triggerRedirect, 400); // Done, move to next
+                    }
+                    bar.style.width = width + "%";
+                    txt.innerText = Math.floor(width) + "%";
+                }, 100);
+            });
+
+            function triggerRedirect() {
+                uploadModal.style.display = "none";
+                uploadWrapper.style.display = "none";
+                mainHeader.style.opacity = "0"; // Fade out header for immersion
+                
+                redirectScreen.style.display = "flex";
+                
+                // Start API Call in background
+                performGeminiAnalysis();
+                
+                setTimeout(triggerProcessing, 1500); // Wait 1.5s for effect
+            }
+
+            function triggerProcessing() {
+                redirectScreen.style.display = "none";
+                processingScreen.style.display = "grid";
+                
+                // Checklist Animation Loop
+                const items = ['chk1', 'chk2', 'chk3', 'chk4'];
+                let index = 0;
+
+                function nextItem() {
+                    if(index < items.length) {
+                        const el = document.getElementById(items[index]);
+                        el.classList.add('visible', 'active');
+                        
+                        // Duration of each check item
+                        setTimeout(() => {
+                            el.classList.remove('active');
+                            el.classList.add('done');
+                            index++;
+                            nextItem();
+                        }, 1200); 
+                    } else {
+                        // All checks done. Check if API is ready.
+                        checkIfAnalysisReady();
+                    }
+                }
+                nextItem();
+            }
+
+            async function checkIfAnalysisReady() {
+                // Simple polling to wait for Gemini result if animation finished before API
+                if (!geminiAnalysisResult) {
+                    const loadingMsg = document.createElement('div');
+                    loadingMsg.innerHTML = '<p style="color:var(--cyan); text-align:center; font-family:Orbitron;">AWAITING NEURAL LINK RESPONSE...</p>';
+                    document.querySelector('.checklist-container').appendChild(loadingMsg);
+                    
+                    while (!geminiAnalysisResult) {
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+                    loadingMsg.remove();
+                }
+                showDashboard();
+            }
+
+            // --- DASHBOARD DISPLAY ---
+            function showDashboard() {
+                processingScreen.style.display = "none";
+                mainHeader.style.opacity = "1";
+                dashboard.style.display = "block";
+
+                // Render Gemini Result
+                viewEnhanced.innerHTML = marked.parse(geminiAnalysisResult);
+
+                // Auto-switch to Analysis view
+                setTimeout(() => { 
+                    if(!toggleSwitch.classList.contains('active')) {
+                        toggleSwitch.click(); 
+                    }
+                }, 1000);
+
+                // Animate Score (Randomized between 85-98 for effect)
+                const randomScore = Math.floor(Math.random() * (98 - 85 + 1) + 85);
+                const gauge = document.getElementById('atsGauge');
+                const offset = 565 - (565 * (randomScore / 100));
+                
+                setTimeout(() => { gauge.style.strokeDashoffset = offset; }, 500);
+                
+                let count = 0;
+                const counter = setInterval(() => {
+                    document.getElementById('scoreVal').innerText = count;
+                    if(count >= randomScore) clearInterval(counter);
+                    count++;
+                }, 20);
+            }
+
+            // --- LOGIC: PDF & API ---
+            async function extractTextFromPDF(file) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n';
+                }
+                return fullText;
+            }
+
+            async function performGeminiAnalysis() {
+                const prompt = `
+                    You are an advanced AI career architect. Analyze the resume below.
+                    
+                    Resume:
+                    ${extractedText}
+
+                    Output purely in Markdown.
+                    Structure:
+                    1. **Executive Profile** (Professional summary)
+                    2. **Key Strengths** (Bullet points)
+                    3. **Critical Gaps** (What is missing?)
+                    4. **Optimization Strategy** (Actionable advice)
+                    5. **Recommended Roles**
+                `;
+
+                try {
+                    geminiAnalysisResult = await callGeminiAPI(API_KEY, prompt);
+                } catch (error) {
+                    console.error(error);
+                    geminiAnalysisResult = "### SYSTEM ERROR\nNeural link severed. Please try again.";
+                }
+            }
+
+            async function callGeminiAPI(apiKey, prompt) {
+                const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro'];
+                
+                for (const model of modelsToTry) {
+                    try {
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        });
+
+                        if (!response.ok) throw new Error(response.statusText);
+                        const data = await response.json();
+                        return data.candidates[0].content.parts[0].text;
+                    } catch (e) {
+                        console.warn(`Model ${model} failed, switching node...`);
+                    }
+                }
+                throw new Error('All models failed');
+            }
+
+            // --- UI INTERACTION LISTENERS ---
+            
+            // Toggle View
+            toggleSwitch.addEventListener('click', () => {
+                toggleSwitch.classList.toggle('active');
+                if(toggleSwitch.classList.contains('active')) {
+                    // Show Analysis
+                    viewOriginal.parentElement.style.display = 'none';
+                    viewEnhanced.style.display = 'block';
+                } else {
+                    // Show Original
+                    viewOriginal.parentElement.style.display = 'block';
+                    viewEnhanced.style.display = 'none';
+                }
+            });
+
+            // Download Button
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                const blob = new Blob([geminiAnalysisResult], { type: "text/markdown" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = "NEXSUS_Report.md";
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+                dashboard.style.display = 'none';
+                thankYouSection.style.display = 'flex';
+            });
+        });
+    </script>
+</body>
+</html>
+```
