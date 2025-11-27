@@ -1,6 +1,4 @@
-Here is the complete, merged code in a single file. You can save this as `index.html` and run it directly in your browser.
-
-```html
+html
 <!DOCTYPE html>
 <html lang="en">
 <head>
