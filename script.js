@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hardcoded API Key for Public Demo
     // WARNING: This key is visible in client-side code. 
     // For a real production app, use a backend proxy.
-    const API_KEY = 'AIzaSyB-hZrgxseYLqtLnjnkBAPkrFEtExYs0ew';
+    const API_KEY = 'AIzaSyCxeuYd6xjhBonQyup44tNxxi4IgLWWGPA';
 
     // Initialize
     checkAnalyzeButtonState();
